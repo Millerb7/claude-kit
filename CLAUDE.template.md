@@ -51,4 +51,8 @@ describe a change as working on the strength of it compiling.
 - When a request is ambiguous and the readings lead to different work, ask
   before building.
 - Never commit, push, or open a PR unless asked.
+- Answer at the length the question deserves. Output bills at roughly five
+  times input, and thinking bills as output, so a paragraph that restates the
+  question costs real money. Skip preamble, skip summarising what you just did
+  unless asked.
 - <anything the branch protections or review process require>

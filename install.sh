@@ -5,7 +5,7 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="${CLAUDE_HOME:-$HOME/.claude}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
-mkdir -p "$DEST/agents"
+mkdir -p "$DEST/agents" "$DEST/commands"
 
 if [ -f "$DEST/settings.json" ]; then
   cp "$DEST/settings.json" "$DEST/settings.json.bak-$STAMP"
@@ -19,6 +19,14 @@ for a in "$SRC"/agents/*.md; do
   [ -f "$DEST/agents/$n" ] && cp "$DEST/agents/$n" "$DEST/agents/$n.bak-$STAMP"
   cp "$a" "$DEST/agents/$n"
   echo "installed $DEST/agents/$n"
+done
+
+for c in "$SRC"/commands/*.md; do
+  [ -e "$c" ] || continue
+  n="$(basename "$c")"
+  [ -f "$DEST/commands/$n" ] && cp "$DEST/commands/$n" "$DEST/commands/$n.bak-$STAMP"
+  cp "$c" "$DEST/commands/$n"
+  echo "installed $DEST/commands/$n"
 done
 
 echo
