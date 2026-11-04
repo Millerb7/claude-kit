@@ -14,6 +14,12 @@ fi
 cp "$SRC/settings.json" "$DEST/settings.json"
 echo "installed $DEST/settings.json"
 
+if [ -f "$SRC/CLAUDE.user.md" ]; then
+  [ -f "$DEST/CLAUDE.md" ] && cp "$DEST/CLAUDE.md" "$DEST/CLAUDE.md.bak-$STAMP"
+  cp "$SRC/CLAUDE.user.md" "$DEST/CLAUDE.md"
+  echo "installed $DEST/CLAUDE.md"
+fi
+
 for a in "$SRC"/agents/*.md; do
   n="$(basename "$a")"
   [ -f "$DEST/agents/$n" ] && cp "$DEST/agents/$n" "$DEST/agents/$n.bak-$STAMP"

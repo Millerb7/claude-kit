@@ -9,6 +9,7 @@ Four things, because the measurements said more than that does not pay.
 ```
 settings.json         -> ~/.claude/settings.json      (user-wide)
 CLAUDE.template.md    -> <repo>/CLAUDE.md             (per project, fill in)
+CLAUDE.user.md        -> ~/.claude/CLAUDE.md          (working style, global)
 agents/*.md           -> ~/.claude/agents/            (four, by task shape)
 commands/brief.md     -> ~/.claude/commands/          (/brief, spec-first)
 scripts/              optional helpers
@@ -135,6 +136,24 @@ Four agents is the ceiling, not a starting point.
 The validated axis is *read a lot, return a little*. Expanding along that axis
 pays. Expanding along "split the work into more steps" does not -- that is the
 thing the measurements ruled out.
+
+## Two CLAUDE.md files, on purpose
+
+| File | Scope | Holds |
+|---|---|---|
+| `~/.claude/CLAUDE.md` | every project | *how you work* - length, reading, delegation, evidence |
+| `<repo>/CLAUDE.md` | one project | *what this codebase is* - layout, boundaries, build, conventions |
+
+Both are in the prefix on every turn, so both stay short. The global one is
+~300 words and should not grow; anything that is true of only one codebase
+belongs in that codebase's file.
+
+There is also an `agent` setting that points the main thread at a custom agent
+definition, applying its system prompt, tool restrictions and model. That is a
+stronger lever than a global CLAUDE.md, but the documentation does not say
+whether its system prompt *replaces* Claude Code's default or layers onto it.
+Until that is settled, the global CLAUDE.md gets the same result additively,
+with nothing to lose.
 
 ## /brief --- the largest lever
 

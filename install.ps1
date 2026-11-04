@@ -15,6 +15,14 @@ if (Test-Path $settings) {
 Copy-Item (Join-Path $src 'settings.json') $settings -Force
 Write-Host "installed $settings"
 
+$userMd = Join-Path $src 'CLAUDE.user.md'
+if (Test-Path $userMd) {
+    $target = Join-Path $dest 'CLAUDE.md'
+    if (Test-Path $target) { Copy-Item $target "$target.bak-$stamp" }
+    Copy-Item $userMd $target -Force
+    Write-Host "installed $target"
+}
+
 Get-ChildItem (Join-Path $src 'agents') -Filter *.md | ForEach-Object {
     $target = Join-Path $dest "agents\$($_.Name)"
     if (Test-Path $target) { Copy-Item $target "$target.bak-$stamp" }
