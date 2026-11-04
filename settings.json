@@ -1,18 +1,28 @@
 {
   "promptCacheTtl": "1h",
   "subagentPromptCacheTtl": "1h",
-
   "effortLevel": "medium",
   "maxEffortLevel": "high",
-
   "todoFeatureEnabled": false,
   "feedbackDrafts": "off",
   "promptSuggestionEnabled": false,
   "autoDreamEnabled": false,
-
   "bashOutputMaxChars": 8000,
-
   "idleCompaction": false,
   "precomputeCompactionEnabled": false,
-  "autoCompactEnabled": true
+  "autoCompactEnabled": true,
+  "modelSettings": {
+    "claude-haiku-5-5": {
+      "effortLevel": "low",
+      "maxEffortLevel": "low"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "medium",
+      "maxEffortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium",
+      "maxEffortLevel": "high"
+    }
+  }
 }

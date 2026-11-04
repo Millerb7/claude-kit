@@ -56,15 +56,28 @@ Not included, on purpose:
 - **`model`** is left at the default. Routing routine work to Sonnet halves the
   price, but whether quality holds is worth measuring rather than assuming.
 
-## The scout agent
+## The three agents
 
-One agent, pinned to Haiku, read-only, forbidden from pasting code.
+Routing by task shape, each pinned to the cheapest model that can do the job.
+The main thread picks one from its `description`; you do not have to name it.
 
-Delegate a search when you do **not** know where something lives. Read the file
-yourself when you do â€” a targeted `sed -n '120,180p'` beats any agent.
+| Agent | Model | Tools | For |
+|---|---|---|---|
+| `scout` | haiku | Read, Glob, Grep | "Where is X?" — retrieval, returns `file:line` |
+| `digest` | haiku | Read | "What is in this large file?" — summary of known paths |
+| `trace` | sonnet | Read, Glob, Grep | "How does X work across files?" — synthesis, needs judgement |
 
-The economics, for a search touching ~50k tokens with ~30 turns left in the
-session:
+Anything requiring a decision — is this change safe, which approach is right —
+stays on the main thread. Do not delegate judgement to a cheaper model.
+
+`modelSettings` in `settings.json` then sets effort per model, which here means
+per role: Haiku is clamped to `low` (retrieval needs no deliberation), Sonnet
+and Opus sit at `medium` with headroom to `high`. Thinking bills as output, so
+this is where effort actually costs money.
+
+### Why delegate at all
+
+For a search touching ~50k tokens with ~30 turns left in the session:
 
 | Search agent | Cost | vs carrying those 50k in an Opus context |
 |---|---|---|
@@ -73,11 +86,32 @@ session:
 | **Haiku** | **$0.007** | **~78x cheaper** |
 
 Context bloat is not a one-time cost: it is re-read on every later turn and it
-pulls the compaction event closer. A Haiku search pays for itself almost
-immediately â€” break-even is a few hundred tokens read.
+pulls the compaction event closer. On Haiku, break-even is a few hundred tokens
+read — effectively always delegate a search you cannot aim precisely.
 
 The `tools:` restriction does two jobs: it shrinks the agent's own prefix, and
 it makes the agent incapable of editing anything.
+
+### Where this stops paying
+
+Three agents is near the ceiling, not a starting point.
+
+- **Delegate when you cannot aim.** If you know the file and the line range,
+  `sed -n '120,180p'` beats any agent — no cold start, and it reads at cache
+  rates.
+- **One call should answer one question.** A taxonomy fine enough that a task
+  needs three agents chained costs three cold starts; a single broader agent
+  would have cost one.
+- **Routing is not free.** The main thread deciding which agent to use is
+  thinking, billed as output at Opus rates. Past a handful of agents the
+  decision costs more than the dispatch saves.
+- **Never delegate implementation.** Measured at 2.05x tokens for identical
+  correctness, and the only configuration in the experiment that edited files
+  nobody asked it to touch.
+
+The validated axis is *read a lot, return a little*. Expanding along that axis
+pays. Expanding along "split the work into more steps" does not — that is the
+thing the measurements ruled out.
 
 ## What is not here, and why
 
