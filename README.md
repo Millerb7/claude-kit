@@ -1,10 +1,8 @@
 # claude-kit
 
-A small, deliberately lean Claude Code setup for working against a fixed API
-budget. Every choice here comes from a measured result, not a preference -- the
-numbers are at the bottom.
+A small, intentionally lean Claude Code setup for a fixed API budget. Each choice stays because measurement showed a saving, not because it is preferred. The numbers are at the end.
 
-Four things, because the measurements said more than that does not pay.
+Four things remain, because the measurements showed that adding more does not pay.
 
 ```
 settings.json         -> ~/.claude/settings.json      (user-wide)
@@ -25,11 +23,9 @@ scripts/              optional helpers
 ./install.sh           # Linux / sandbox
 ```
 
-Both copy `settings.json` and `agents/` into `~/.claude/`, backing up anything
-already there. Neither touches a project's own `.claude/` directory.
+`install.sh` and `install.ps1` copy `settings.json`, `CLAUDE.user.md` (landing as `~/.claude/CLAUDE.md`), `agents/*` and `commands/*` into `$HOME/.claude`. They honour a `CLAUDE_HOME` override, take a timestamped backup (`.bak-<stamp>`) of anything they would overwrite, and print each destination plus the resolved `HOME`. They do not install `CLAUDE.template.md` (it is per-repo) or anything under `scripts/`, and they leave a project's own `.claude/` directory alone.
 
-If the environment does not pick up `~/.claude` -- common inside a sandbox,
-where `$HOME` is not what you expect -- pass the file explicitly instead:
+If the environment does not pick up `~/.claude`, as can happen in a sandbox where `$HOME` is not what you expect, pass the file explicitly instead:
 
 ```bash
 claude --settings /path/to/settings.json
@@ -42,100 +38,69 @@ in a project `CLAUDE.md`, start a session, ask for the codeword. Unambiguous.
 
 | Setting | Why |
 |---|---|
-| `promptCacheTtl: "1h"` | **The important one.** On an API key the cache defaults to 5 minutes, so normal thinking time between turns expires the prefix and you re-pay to write it. |
-| `subagentPromptCacheTtl: "1h"` | Same, for subagents and background work. |
-| `effortLevel` / `maxEffortLevel` | Thinking bills as output. `maxEffortLevel` is the real guard -- it clamps `/effort`, `--effort` and the model default. |
-| `idleCompaction: false` | Compaction is a model call **and** a full cache re-write. Doing it while idle is pure waste. |
-| `precomputeCompactionEnabled: false` | A speculative summary that may never be used. |
-| `autoDreamEnabled: false` | Background memory consolidation -- model calls you never see. |
-| `autoCompactEnabled: true` | **Left on deliberately.** Without it you hit the context wall and have to `/clear`, which throws the cache away entirely. |
-| `bashOutputMaxChars: 8000` | Caps how much command output enters context permanently. |
+| `promptCacheTtl: "1h"` | **Core cost control.** On an API key the cache starts at 5 minutes, so ordinary pauses age the prefix and the next turn writes it again at full price. |
+| `subagentPromptCacheTtl: "1h"` | Applies the same cache window to subagents and background work. |
+| `effortLevel` / `maxEffortLevel` | Thinking tokens bill as output tokens. `maxEffortLevel` enforces the ceiling across `/effort`, `--effort`, and the model default. |
+| `idleCompaction: false` | Each compaction spends a model call plus a full cache write. Running it while idle uses budget with no saving. |
+| `precomputeCompactionEnabled: false` | Stops an anticipated compaction summary that may never be consumed. |
+| `autoDreamEnabled: false` | Suppresses background memory consolidation, which would run as hidden model calls. |
+| `autoCompactEnabled: true` | **Kept true by design.** Turning it off can fill context and force `/clear`, discarding the cache, a worse outcome than compacting. |
+| `bashOutputMaxChars: 8000` | Sets the maximum amount of command output retained in context. |
 
-Not included, on purpose:
+Left out, deliberately:
 
-- **`disableBundledSkills`** shrinks the prefix but removes the docx/xlsx/pdf
-  skills. Add it only if you never have Claude produce documents.
-- **`model`** is left at the default. Routing routine work to Sonnet halves the
-  price, but whether quality holds is worth measuring rather than assuming.
+- **`disableBundledSkills`** trims the prefix but costs the docx/xlsx/pdf document skills. Enable it only when Claude will not build documents.
+- **`model`** is not pinned. Sending routine work to Sonnet halves cost, but the quality tradeoff should be validated before routing.
 
 ## The four agents
 
-Routing by task shape, each pinned to the cheapest model that can do the job.
-The main thread picks one from its `description`; you do not have to name it.
+Agents are chosen by task shape. Each agent is bound to the least expensive model that can cover that shape. Selection is driven by the agent `description`, so the user does not choose the agent by name.
 
 | Agent | Model | Tools | For |
 |---|---|---|---|
-| `scout` | haiku | Read, Glob, Grep | "Where is X?" -- retrieval, returns `file:line` |
-| `digest` | haiku | Read | "What is in this large file?" -- summary of known paths |
-| `trace` | sonnet | Read, Glob, Grep | "How does X work across files?" -- synthesis, needs judgement |
-| `triage` | sonnet | Read, Glob, Grep | "Why did this fail?" -- reads a huge log, returns one cause |
+| `scout` | haiku | Read, Glob, Grep | unknown-path lookup, answer is `file:line` |
+| `digest` | haiku | Read | summarize files already located |
+| `trace` | sonnet | Read, Glob, Grep | explain a behavior that spans files |
+| `triage` | sonnet | Read, Glob, Grep | reduce a huge log to one likely cause |
 
-`triage` pairs with `bashOutputMaxChars`: oversized command output is saved to
-a file rather than shown inline, and `triage` reads that file cheaply instead
-of 50k of build log entering the main context. Sonnet rather than Haiku --- a
-wrong diagnosis costs a wasted Opus turn, worth more than the read-price gap.
+Oversized command output is written to a file when `bashOutputMaxChars` trips, and `triage` consumes that file instead of letting 50k of build log enter the main context. The model is Sonnet, not Haiku: a false diagnosis can burn an Opus turn, and that burn is larger than the read-rate saving.
 
-Anything requiring a decision -- is this change safe, which approach is right --
-stays on the main thread. Do not delegate judgement to a cheaper model.
+Every judgment call, such as whether a change is safe or which approach is correct, remains on the main thread. A cheaper model must not own the judgment.
 
 ### Effort, and why it is not in the agent files
 
-Agent frontmatter takes `name`, `description`, `model` and `tools`. There is no
-effort key, so effort is set per *model* in `settings.json` -- and because
-models map to roles here, that is effectively per role: Haiku clamped to `low`
-(retrieval needs no deliberation), Sonnet and Opus at `medium` with headroom.
+Each agent file starts with four frontmatter fields: `name`, `description`, `model`, and `tools`. Effort is absent from that set, so `settings.json` sets it by *model*. In this kit, a model name doubles as a role label, so effort set by model also behaves as effort set by role: Haiku is fixed at `low` because lookups need little thought, while Sonnet and Opus hold `medium` and keep room to climb.
 
-The limitation this leaves: `trace` and `triage` share Sonnet, so they share
-its effort, though synthesis deserves more deliberation than log-scanning.
-There is no way to split them without moving one to a different model. The
-lever that remains is in each agent's body -- an explicit word cap, which
-bounds output directly, and output is where thinking is billed.
+One consequence is that `trace` and `triage` both inherit the Sonnet effort setting, although tracing a flow wants more deliberation than scanning logs. A frontmatter-only change cannot break that tie; a model swap would be required. The remaining control lives in the body: a hard word limit sets a token ceiling and thereby limits the thinking charge, since thinking bills as output.
 
 ### Why the descriptions read the way they do
 
-A `description` sits in the prefix on **every turn** and is what the main
-thread routes on. A body loads **only when the agent runs**. So descriptions
-are terse and each ends with an explicit *do not use for*, because
-over-triggering is the measured waste mode; bodies carry the detail and cost
-nothing until invoked.
+The `description` field is sent in the prefix on **every turn**, and the main thread uses it as the routing signal. The body enters context **only when that agent actually starts**. Because extra triggers are the measured source of waste, descriptions stay short and each names a *do not use for* case. The detailed rules wait in the body, so they create no cost until the agent is invoked.
 
 ### Why delegate at all
 
-For a search touching ~50k tokens with ~30 turns left in the session:
+Take a search that would read ~50k tokens while ~30 turns remain in the session:
 
-| Search agent | Cost | vs carrying those 50k in an Opus context |
+| Search agent | Cost | price compared with leaving those 50k in an Opus context |
 |---|---|---|
 | Opus | $0.28 | ~2x cheaper |
 | Sonnet | $0.14 | ~4x cheaper |
 | **Haiku** | **$0.007** | **~78x cheaper** |
 
-Context bloat is not a one-time cost: it is re-read on every later turn and it
-pulls the compaction event closer. On Haiku, break-even is a few hundred tokens
-read -- effectively always delegate a search you cannot aim precisely.
+That extra context is not a single expense. It is re-sent with each subsequent turn, and it advances the compaction event. For Haiku, the crossover appears after only a few hundred read tokens, which makes delegation the default for any search lacking a precise target.
 
-The `tools:` restriction does two jobs: it shrinks the agent's own prefix, and
-it makes the agent incapable of editing anything.
+The `tools:` line has two effects: it cuts the agent's prefix size and removes its ability to modify files.
 
 ### Where this stops paying
 
-Four agents is the ceiling, not a starting point.
+The count of four is an upper bound, not a minimum.
 
-- **Delegate when you cannot aim.** If you know the file and the line range,
-  `sed -n '120,180p'` beats any agent -- no cold start, and it reads at cache
-  rates.
-- **One call should answer one question.** A taxonomy fine enough that a task
-  needs three agents chained costs three cold starts; a single broader agent
-  would have cost one.
-- **Routing is not free.** The main thread deciding which agent to use is
-  thinking, billed as output at Opus rates. Past a handful of agents the
-  decision costs more than the dispatch saves.
-- **Never delegate implementation.** Measured at 2.05x tokens for identical
-  correctness, and the only configuration in the experiment that edited files
-  nobody asked it to touch.
+- **Dispatch a lookup only when the target is not already fixed.** With file and line range in hand, `sed -n '120,180p'` outperforms an agent, because it avoids a cold start and reads at cache rates.
+- **One dispatch should close one question.** A taxonomy so fine that a task chains three agents pays three cold starts; one broader agent would have paid one.
+- **Selection has a price.** The main thread's act of choosing is thinking, billed as output at Opus rates. Once the agent list grows beyond a small set, that choice outweighs the dispatch saving.
+- **Never delegate implementation.** The measurement was 2.05x tokens for identical correctness, and it was the only experiment setup that edited files it was not asked to touch.
 
-The validated axis is *read a lot, return a little*. Expanding along that axis
-pays. Expanding along "split the work into more steps" does not -- that is the
-thing the measurements ruled out.
+The axis that held up under measurement is *read a lot, return a little*. Capacity on that axis pays. Capacity aimed at "split the work into more steps" does not pay; the measurements ruled out that direction.
 
 ## Two CLAUDE.md files, on purpose
 
@@ -144,63 +109,44 @@ thing the measurements ruled out.
 | `~/.claude/CLAUDE.md` | every project | *how you work* - length, reading, delegation, evidence |
 | `<repo>/CLAUDE.md` | one project | *what this codebase is* - layout, boundaries, build, conventions |
 
-Both are in the prefix on every turn, so both stay short. The global one is
-~300 words and should not grow; anything that is true of only one codebase
-belongs in that codebase's file.
+Prefix load on every turn forces both to stay short. The global file is ~300 words and should not grow; content true of only one codebase belongs in that codebase's file.
 
-There is also an `agent` setting that points the main thread at a custom agent
-definition, applying its system prompt, tool restrictions and model. That is a
-stronger lever than a global CLAUDE.md, but the documentation does not say
-whether its system prompt *replaces* Claude Code's default or layers onto it.
-Until that is settled, the global CLAUDE.md gets the same result additively,
-with nothing to lose.
+An `agent` setting can point the main thread at a custom agent definition and apply its system prompt, tool restrictions and model. That is a stronger lever than a global CLAUDE.md. The docs do not state whether that system prompt replaces the Claude Code default or adds to it. Keep the global CLAUDE.md for now; it adds the same constraints and keeps default behavior intact.
 
 ## /brief --- the largest lever
 
-`/brief <rough ask>` makes Claude restate a request as symptom, constraint,
-scope and done-when, ask any genuinely blocking question, then stop before
-implementing.
+`/brief <rough ask>` forces Claude to restate a rough ask as symptom, constraint, scope and done-when, asks only genuinely blocking questions, then stops before implementing.
 
-This exists because of the biggest number in the experiment: reaching the same
-result through three conversational prompts cost **2.79x** one complete brief.
-The agents save tokens on reading; this saves them on re-work, and re-work was
-the more expensive of the two.
+It targets the largest measured number: three conversational prompts reaching one result cost **2.79x** one complete brief. Agents cut read tokens; this cuts re-work tokens, and re-work proved the larger cost.
 
-One cheap turn up front, instead of discovering the constraint after seeing a
-wrong first attempt.
+It spends one cheap turn up front instead of finding the constraint after a wrong first attempt.
 
 ## Output length is a cost control
 
-Output bills at roughly five times input, and thinking bills as output. A reply
-that restates the question before answering it is money.
+Because output costs about five times input and thinking is billed as output, any restated question adds cost.
 
-`CLAUDE.template.md` says so in its working agreement, and `modelSettings`
-caps effort per model. Both aim at the same line item.
+`CLAUDE.template.md` makes that rule explicit in its working agreement, while `modelSettings` limits effort per model. The two controls hit the same spend item.
 
 ## What is not here, and why
 
 | Left out | Reason |
 |---|---|
-| Implementation subagents | Measured 2.05x the tokens for identical correctness, and the only configuration that edited files nobody asked it to touch. |
-| A QA pipeline | Worth building once there are test suites to map. Not before. |
-| Security / stack rule files | Valuable, but only when written for the actual stack. Generic ones are weight. |
-| Workflow scripts | Too tied to one project's issue tracker and branch model. |
+| Implementation subagents | Measurement showed 2.05x more tokens for the same correctness, and this setup was the only one that modified files outside the request. |
+| A QA pipeline | Build it after test suites exist to map. Before that it adds no value. |
+| Security / stack rule files | They pay only when written for the stack in use. Generic rules add weight without signal. |
+| Workflow scripts | Too bound to a single project issue tracker and branch model. |
 
 ## The measurements behind this
 
-From a controlled experiment: 4 environments, 2 tasks, 27 trials, hidden
-acceptance suites written before any trial ran.
+The figures below came from a controlled test: 4 environments, 2 tasks, 27 trials, and hidden acceptance suites built before trial one began.
 
 | Finding | Number |
 |---|---|
 | Reaching the same result through 3 conversational prompts vs 1 complete brief | **2.79x** tokens |
-| Forced multi-agent decomposition of implementation work | **2.05x**, no correctness gain |
-| A fully documented repo vs a bare one, on real multi-file work | **0.98x** -- free |
-| Correctness difference between any of the environments | **none**, across all 27 trials |
+| Forced multi-agent decomposition of implementation work | **2.05x**, with no gain in correctness |
+| A fully documented repo vs a bare one, on real multi-file work | **0.98x**, free |
+| Correctness difference between any of the environments | **none**, in all 27 trials |
 
-The environments differed only in cost, and cost was driven by **how the work
-was requested**, not by how much tooling surrounded it.
+The only split between the setups was cost. That cost tracked **how the work was requested**, not how much tooling stood around it.
 
-So the highest-return habit is not in this repo at all: **write the brief
-before you start.** Symptom, constraint, and what must not break. It costs
-nothing and it was the largest single lever measured.
+Keep the best-value habit outside this repo. Complete the request text before coding. Name symptom, constraint, and what must not break. That first step spends no tokens and measured as the largest single saving.
