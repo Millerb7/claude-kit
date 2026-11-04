@@ -1,6 +1,6 @@
 # <PROJECT NAME>
 
-<One or two sentences: what this is, who uses it, what stage it is at.>
+<Give one or two sentences: what the project is, who uses it, and its current stage.>
 
 ## Layout
 
@@ -9,50 +9,39 @@
 <path/>        <what lives here>
 ```
 
-<Name the one or two files that are the heart of the system, so finding them
-does not need a search.>
+<List the one or two core files, so their locations are known without searching.>
 
 ## Context boundaries
 
-**Never search or read:** <node_modules/, dist/, build/, .next/, bin/, obj/,
-vendor/, packages/, *.lock, generated clients, migration history, large
-fixtures>
+**Exclude from search and direct reads:** <node_modules/, dist/, build/, .next/,
+bin/, obj/, vendor/, packages/, *.lock, generated clients, migration history,
+large fixtures>
 
-These are large, generated, or both. An unbounded search across them burns a
-context window and returns noise. To learn an API from a dependency, open the
-one file needed, by exact path.
+These trees are generated, vendored, or both. Broad scans waste context and return noise. When checking a dependency API, open the single required file by exact path.
 
-**Read only the part you need.** Prefer `sed -n '120,180p' file` or a grep with
-context over reading a whole file. Anything read stays in context and is
-re-sent on every later turn.
+**Fetch just the required lines.** Prefer `sed -n '120,180p' file` or a contextual grep over loading the whole file. Read text remains in context and is re-sent on each later turn.
 
 ## Verification
 
-<What proves a change works here. Specific and runnable.>
+<Name what proves a change works here. Keep it specific and runnable.>
 
 ```
 <build command>
 <test command>
 ```
 
-A clean build is not a passing test. State what was actually run; do not
-describe a change as working on the strength of it compiling.
+A clean build is not a passing test. Report what actually ran; do not call a change working because compilation succeeded.
 
 ## Conventions
 
-- <a rule that is not obvious from reading the code>
-- <a naming or layout rule a newcomer would get wrong>
-- <the thing that has bitten someone before>
+- <state a rule that is not obvious from reading the code>
+- <state a naming or layout rule a newcomer would get wrong>
+- <state the thing that has bitten someone before>
 
 ## Working agreement
 
-- Make the change that was asked for. Note anything else you notice; do not
-  fix it in the same pass.
-- When a request is ambiguous and the readings lead to different work, ask
-  before building.
-- Never commit, push, or open a PR unless asked.
-- Answer at the length the question deserves. Output bills at roughly five
-  times input, and thinking bills as output, so a paragraph that restates the
-  question costs real money. Skip preamble, skip summarising what you just did
-  unless asked.
-- <anything the branch protections or review process require>
+- Apply only the requested change. Record other observations without fixing them in the same pass.
+- If a request can be read in two ways that lead to different work, ask before building.
+- Only make a commit, push, or PR when explicitly told to.
+- Keep answers as short as the question requires. Output costs about five times input, and thinking bills as output, so restating the question has a real price. Drop preamble and do not summarize completed work unless asked.
+- <state anything the branch protections or review process require>

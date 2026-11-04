@@ -1,19 +1,18 @@
 ---
-description: Turn a rough ask into a written brief before any work starts
+description: Restate a rough request as symptom, constraint, scope, and done-when, then stop
 ---
 
-Here is what I want done:
+Request:
 
 $ARGUMENTS
 
-Before touching anything, restate it as a brief:
+Before any implementation, restate the request as:
 
-- **Symptom** -- what is observably wrong or missing, from the outside
-- **Constraint** -- what must remain true; what must NOT change or break
-- **Scope** -- the files or area you expect to touch, and what is out of bounds
-- **Done when** -- what you will run or show to prove it works
+- Symptom: the observable problem or missing behaviour, from the outside
+- Constraint: what must remain true, and what must not change or break
+- Scope: the files or areas to touch, plus anything out of bounds
+- Done when: the command, check, or evidence that proves it works
 
-Then ask any question where two readings would lead to materially different
-work. Ask nothing you can settle by reading the code.
+After that, ask only questions where two readings would produce materially different work. Do not ask questions that reading the code can answer.
 
-Stop there. Do not implement until I reply.
+Stop after the brief and questions. Do not implement until I reply.
