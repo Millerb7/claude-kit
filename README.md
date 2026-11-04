@@ -1,7 +1,7 @@
 # claude-kit
 
 A small, deliberately lean Claude Code setup for working against a fixed API
-budget. Every choice here comes from a measured result, not a preference — the
+budget. Every choice here comes from a measured result, not a preference â€" the
 numbers are at the bottom.
 
 Four things, because the measurements said more than that does not pay.
@@ -9,7 +9,8 @@ Four things, because the measurements said more than that does not pay.
 ```
 settings.json         -> ~/.claude/settings.json      (user-wide)
 CLAUDE.template.md    -> <repo>/CLAUDE.md             (per project, fill in)
-agents/scout.md       -> ~/.claude/agents/scout.md     (search, on Haiku)
+agents/*.md           -> ~/.claude/agents/            (four, by task shape)
+commands/brief.md     -> ~/.claude/commands/          (/brief, spec-first)
 scripts/              optional helpers
 ```
 
@@ -26,8 +27,8 @@ scripts/              optional helpers
 Both copy `settings.json` and `agents/` into `~/.claude/`, backing up anything
 already there. Neither touches a project's own `.claude/` directory.
 
-If the environment does not pick up `~/.claude` — common inside a sandbox,
-where `$HOME` is not what you expect — pass the file explicitly instead:
+If the environment does not pick up `~/.claude` â€" common inside a sandbox,
+where `$HOME` is not what you expect â€" pass the file explicitly instead:
 
 ```bash
 claude --settings /path/to/settings.json
@@ -42,10 +43,10 @@ in a project `CLAUDE.md`, start a session, ask for the codeword. Unambiguous.
 |---|---|
 | `promptCacheTtl: "1h"` | **The important one.** On an API key the cache defaults to 5 minutes, so normal thinking time between turns expires the prefix and you re-pay to write it. |
 | `subagentPromptCacheTtl: "1h"` | Same, for subagents and background work. |
-| `effortLevel` / `maxEffortLevel` | Thinking bills as output. `maxEffortLevel` is the real guard — it clamps `/effort`, `--effort` and the model default. |
+| `effortLevel` / `maxEffortLevel` | Thinking bills as output. `maxEffortLevel` is the real guard â€" it clamps `/effort`, `--effort` and the model default. |
 | `idleCompaction: false` | Compaction is a model call **and** a full cache re-write. Doing it while idle is pure waste. |
 | `precomputeCompactionEnabled: false` | A speculative summary that may never be used. |
-| `autoDreamEnabled: false` | Background memory consolidation — model calls you never see. |
+| `autoDreamEnabled: false` | Background memory consolidation â€" model calls you never see. |
 | `autoCompactEnabled: true` | **Left on deliberately.** Without it you hit the context wall and have to `/clear`, which throws the cache away entirely. |
 | `bashOutputMaxChars: 8000` | Caps how much command output enters context permanently. |
 
@@ -56,18 +57,24 @@ Not included, on purpose:
 - **`model`** is left at the default. Routing routine work to Sonnet halves the
   price, but whether quality holds is worth measuring rather than assuming.
 
-## The three agents
+## The four agents
 
 Routing by task shape, each pinned to the cheapest model that can do the job.
 The main thread picks one from its `description`; you do not have to name it.
 
 | Agent | Model | Tools | For |
 |---|---|---|---|
-| `scout` | haiku | Read, Glob, Grep | "Where is X?" � retrieval, returns `file:line` |
-| `digest` | haiku | Read | "What is in this large file?" � summary of known paths |
-| `trace` | sonnet | Read, Glob, Grep | "How does X work across files?" � synthesis, needs judgement |
+| `scout` | haiku | Read, Glob, Grep | "Where is X?" -- retrieval, returns `file:line` |
+| `digest` | haiku | Read | "What is in this large file?" -- summary of known paths |
+| `trace` | sonnet | Read, Glob, Grep | "How does X work across files?" -- synthesis, needs judgement |
+| `triage` | sonnet | Read, Glob, Grep | "Why did this fail?" -- reads a huge log, returns one cause |
 
-Anything requiring a decision � is this change safe, which approach is right �
+`triage` pairs with `bashOutputMaxChars`: oversized command output is saved to
+a file rather than shown inline, and `triage` reads that file cheaply instead
+of 50k of build log entering the main context. Sonnet rather than Haiku --- a
+wrong diagnosis costs a wasted Opus turn, worth more than the read-price gap.
+
+Anything requiring a decision -- is this change safe, which approach is right --
 stays on the main thread. Do not delegate judgement to a cheaper model.
 
 `modelSettings` in `settings.json` then sets effort per model, which here means
@@ -87,17 +94,17 @@ For a search touching ~50k tokens with ~30 turns left in the session:
 
 Context bloat is not a one-time cost: it is re-read on every later turn and it
 pulls the compaction event closer. On Haiku, break-even is a few hundred tokens
-read � effectively always delegate a search you cannot aim precisely.
+read -- effectively always delegate a search you cannot aim precisely.
 
 The `tools:` restriction does two jobs: it shrinks the agent's own prefix, and
 it makes the agent incapable of editing anything.
 
 ### Where this stops paying
 
-Three agents is near the ceiling, not a starting point.
+Four agents is the ceiling, not a starting point.
 
 - **Delegate when you cannot aim.** If you know the file and the line range,
-  `sed -n '120,180p'` beats any agent � no cold start, and it reads at cache
+  `sed -n '120,180p'` beats any agent -- no cold start, and it reads at cache
   rates.
 - **One call should answer one question.** A taxonomy fine enough that a task
   needs three agents chained costs three cold starts; a single broader agent
@@ -110,8 +117,30 @@ Three agents is near the ceiling, not a starting point.
   nobody asked it to touch.
 
 The validated axis is *read a lot, return a little*. Expanding along that axis
-pays. Expanding along "split the work into more steps" does not � that is the
+pays. Expanding along "split the work into more steps" does not -- that is the
 thing the measurements ruled out.
+
+## /brief --- the largest lever
+
+`/brief <rough ask>` makes Claude restate a request as symptom, constraint,
+scope and done-when, ask any genuinely blocking question, then stop before
+implementing.
+
+This exists because of the biggest number in the experiment: reaching the same
+result through three conversational prompts cost **2.79x** one complete brief.
+The agents save tokens on reading; this saves them on re-work, and re-work was
+the more expensive of the two.
+
+One cheap turn up front, instead of discovering the constraint after seeing a
+wrong first attempt.
+
+## Output length is a cost control
+
+Output bills at roughly five times input, and thinking bills as output. A reply
+that restates the question before answering it is money.
+
+`CLAUDE.template.md` says so in its working agreement, and `modelSettings`
+caps effort per model. Both aim at the same line item.
 
 ## What is not here, and why
 
@@ -131,7 +160,7 @@ acceptance suites written before any trial ran.
 |---|---|
 | Reaching the same result through 3 conversational prompts vs 1 complete brief | **2.79x** tokens |
 | Forced multi-agent decomposition of implementation work | **2.05x**, no correctness gain |
-| A fully documented repo vs a bare one, on real multi-file work | **0.98x** — free |
+| A fully documented repo vs a bare one, on real multi-file work | **0.98x** â€" free |
 | Correctness difference between any of the environments | **none**, across all 27 trials |
 
 The environments differed only in cost, and cost was driven by **how the work
