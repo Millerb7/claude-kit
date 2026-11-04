@@ -1,7 +1,7 @@
 # claude-kit
 
 A small, deliberately lean Claude Code setup for working against a fixed API
-budget. Every choice here comes from a measured result, not a preference â€" the
+budget. Every choice here comes from a measured result, not a preference -- the
 numbers are at the bottom.
 
 Four things, because the measurements said more than that does not pay.
@@ -28,8 +28,8 @@ scripts/              optional helpers
 Both copy `settings.json` and `agents/` into `~/.claude/`, backing up anything
 already there. Neither touches a project's own `.claude/` directory.
 
-If the environment does not pick up `~/.claude` â€" common inside a sandbox,
-where `$HOME` is not what you expect â€" pass the file explicitly instead:
+If the environment does not pick up `~/.claude` -- common inside a sandbox,
+where `$HOME` is not what you expect -- pass the file explicitly instead:
 
 ```bash
 claude --settings /path/to/settings.json
@@ -44,10 +44,10 @@ in a project `CLAUDE.md`, start a session, ask for the codeword. Unambiguous.
 |---|---|
 | `promptCacheTtl: "1h"` | **The important one.** On an API key the cache defaults to 5 minutes, so normal thinking time between turns expires the prefix and you re-pay to write it. |
 | `subagentPromptCacheTtl: "1h"` | Same, for subagents and background work. |
-| `effortLevel` / `maxEffortLevel` | Thinking bills as output. `maxEffortLevel` is the real guard â€" it clamps `/effort`, `--effort` and the model default. |
+| `effortLevel` / `maxEffortLevel` | Thinking bills as output. `maxEffortLevel` is the real guard -- it clamps `/effort`, `--effort` and the model default. |
 | `idleCompaction: false` | Compaction is a model call **and** a full cache re-write. Doing it while idle is pure waste. |
 | `precomputeCompactionEnabled: false` | A speculative summary that may never be used. |
-| `autoDreamEnabled: false` | Background memory consolidation â€" model calls you never see. |
+| `autoDreamEnabled: false` | Background memory consolidation -- model calls you never see. |
 | `autoCompactEnabled: true` | **Left on deliberately.** Without it you hit the context wall and have to `/clear`, which throws the cache away entirely. |
 | `bashOutputMaxChars: 8000` | Caps how much command output enters context permanently. |
 
@@ -195,7 +195,7 @@ acceptance suites written before any trial ran.
 |---|---|
 | Reaching the same result through 3 conversational prompts vs 1 complete brief | **2.79x** tokens |
 | Forced multi-agent decomposition of implementation work | **2.05x**, no correctness gain |
-| A fully documented repo vs a bare one, on real multi-file work | **0.98x** â€" free |
+| A fully documented repo vs a bare one, on real multi-file work | **0.98x** -- free |
 | Correctness difference between any of the environments | **none**, across all 27 trials |
 
 The environments differed only in cost, and cost was driven by **how the work
