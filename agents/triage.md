@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Find the first real cause in a long log, stack trace, or test file. Returns one cause, a short effect, and a source path:LINE. Use when output is too large to read inline. Do not use for visible output, for a known path (prefer digest), or for fix design.
+description: Triage oversized command output, including long logs, stack traces, or test run output saved to a file. Returns the first real cause and likely source path:LINE, never the log. Use when output is too large to read inline. Do not use for visible conversation output, summarising source files (digest), locating code (scout), or fix design.
 model: sonnet
 tools: Read, Glob, Grep
 ---

@@ -149,4 +149,4 @@ The figures below came from a controlled test: 4 environments, 2 tasks, 27 trial
 
 The only split between the setups was cost. That cost tracked **how the work was requested**, not how much tooling stood around it.
 
-Keep the best-value habit outside this repo. Complete the request text before coding. Name symptom, constraint, and what must not break. That first step spends no tokens and measured as the largest single saving.
+**Write the brief before you start.** The highest-return habit lives with you, not in this repo. Name symptom, constraint, and what must not break. It costs nothing and was the largest single lever measured.
