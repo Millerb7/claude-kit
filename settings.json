@@ -1,0 +1,18 @@
+{
+  "promptCacheTtl": "1h",
+  "subagentPromptCacheTtl": "1h",
+
+  "effortLevel": "medium",
+  "maxEffortLevel": "high",
+
+  "todoFeatureEnabled": false,
+  "feedbackDrafts": "off",
+  "promptSuggestionEnabled": false,
+  "autoDreamEnabled": false,
+
+  "bashOutputMaxChars": 8000,
+
+  "idleCompaction": false,
+  "precomputeCompactionEnabled": false,
+  "autoCompactEnabled": true
+}
