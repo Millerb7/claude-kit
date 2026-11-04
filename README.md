@@ -77,10 +77,26 @@ wrong diagnosis costs a wasted Opus turn, worth more than the read-price gap.
 Anything requiring a decision -- is this change safe, which approach is right --
 stays on the main thread. Do not delegate judgement to a cheaper model.
 
-`modelSettings` in `settings.json` then sets effort per model, which here means
-per role: Haiku is clamped to `low` (retrieval needs no deliberation), Sonnet
-and Opus sit at `medium` with headroom to `high`. Thinking bills as output, so
-this is where effort actually costs money.
+### Effort, and why it is not in the agent files
+
+Agent frontmatter takes `name`, `description`, `model` and `tools`. There is no
+effort key, so effort is set per *model* in `settings.json` -- and because
+models map to roles here, that is effectively per role: Haiku clamped to `low`
+(retrieval needs no deliberation), Sonnet and Opus at `medium` with headroom.
+
+The limitation this leaves: `trace` and `triage` share Sonnet, so they share
+its effort, though synthesis deserves more deliberation than log-scanning.
+There is no way to split them without moving one to a different model. The
+lever that remains is in each agent's body -- an explicit word cap, which
+bounds output directly, and output is where thinking is billed.
+
+### Why the descriptions read the way they do
+
+A `description` sits in the prefix on **every turn** and is what the main
+thread routes on. A body loads **only when the agent runs**. So descriptions
+are terse and each ends with an explicit *do not use for*, because
+over-triggering is the measured waste mode; bodies carry the detail and cost
+nothing until invoked.
 
 ### Why delegate at all
 

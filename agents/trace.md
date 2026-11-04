@@ -1,6 +1,6 @@
 ---
 name: trace
-description: Explain how a behaviour works across several files — a request path, a data flow, a lifecycle. Returns a narrative with file:line citations. Use when the answer spans files and needs synthesis, not just retrieval.
+description: Explain how a behaviour works across several files - a request path, a data flow, a lifecycle. Returns a narrative with file:line citations. Use when the answer needs synthesis across files. Do not use for pure retrieval (use scout), for one file (use digest), or to decide whether a change is safe.
 model: sonnet
 tools: Read, Glob, Grep
 ---
@@ -16,5 +16,5 @@ Report:
 Cite rather than quote. At most one short snippet, and only if a line is
 genuinely impossible to paraphrase. Under 600 words.
 
-If the question turns out to be pure retrieval, say so and answer it briefly —
+If the question turns out to be pure retrieval, say so and answer it briefly -
 do not pad it into a narrative.
